@@ -9,7 +9,7 @@ defmodule HalloweenWeb.DecksLive do
 
     {:ok,
      socket
-     |> assign(page_title: "Decks", form: to_form(Game.change_deck(%Deck{})))
+     |> assign(page_title: t("Decks"), form: to_form(Game.change_deck(%Deck{})))
      |> assign(decks: Game.list_decks())}
   end
 
@@ -27,7 +27,7 @@ defmodule HalloweenWeb.DecksLive do
 
   def handle_event("starter", _params, socket) do
     Starter.load()
-    {:noreply, put_flash(socket, :info, "Starter decks loaded.")}
+    {:noreply, put_flash(socket, :info, t("Starter decks loaded."))}
   end
 
   @impl true
@@ -35,16 +35,26 @@ defmodule HalloweenWeb.DecksLive do
     ~H"""
     <Layouts.host flash={@flash} page={:decks}>
       <section class="panel">
-        <h2>Decks</h2>
+        <h2>{t("Decks")}</h2>
         <p :if={@decks == []} class="hint">
-          A deck is a pile of cards: one game, like Pekleken or trivia. Start from the starter decks, or make your own.
+          {t(
+            "A deck is a pile of cards: one game, like Pekleken or trivia. Start from the starter decks, or make your own."
+          )}
         </p>
-        <button :if={@decks == []} class="btn btn-candle" phx-click="starter">Load the starter decks</button>
+        <button
+          class={["btn", @decks == [] && "btn-candle"]}
+          phx-click="starter"
+          data-confirm={
+            @decks != [] && t("Add the starter decks next to the decks you already have?")
+          }
+        >
+          {t("Load the starter decks")}
+        </button>
         <ul class="deck-list">
           <li :for={deck <- @decks}>
             <.link navigate={~p"/host/decks/#{deck}"}>
               <strong>{deck.name}</strong>
-              <span class="meta">{length(deck.cards)} cards</span>
+              <span class="meta">{t("%{n} cards", n: length(deck.cards))}</span>
               <span :if={deck.description} class="deck-desc">{deck.description}</span>
             </.link>
           </li>
@@ -52,11 +62,11 @@ defmodule HalloweenWeb.DecksLive do
       </section>
 
       <section class="panel">
-        <h2>New deck</h2>
+        <h2>{t("New deck")}</h2>
         <.form for={@form} phx-submit="create" class="stack">
-          <.input field={@form[:name]} label="Name" />
-          <.input field={@form[:description]} label="What it's about (only you see this)" />
-          <button class="btn btn-candle">Create deck</button>
+          <.input field={@form[:name]} label={t("Name")} />
+          <.input field={@form[:description]} label={t("What it's about (only you see this)")} />
+          <button class="btn btn-candle">{t("Create deck")}</button>
         </.form>
       </section>
     </Layouts.host>

@@ -92,7 +92,7 @@ defmodule HalloweenWeb.CoreComponents do
 
   defp messages(field) do
     Enum.map(field.errors, fn {msg, opts} ->
-      Enum.reduce(opts, msg, fn {key, value}, acc ->
+      Enum.reduce(opts, Halloween.Text.t(msg), fn {key, value}, acc ->
         String.replace(acc, "%{#{key}}", fn _ -> to_string(value) end)
       end)
     end)

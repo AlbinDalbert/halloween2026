@@ -6,7 +6,7 @@ defmodule HalloweenWeb.HostLive do
   @impl true
   def mount(_params, _session, socket) do
     if connected?(socket), do: Game.subscribe()
-    {:ok, socket |> assign(page_title: "Host") |> load()}
+    {:ok, socket |> assign(page_title: t("Host")) |> load()}
   end
 
   @impl true
@@ -50,7 +50,7 @@ defmodule HalloweenWeb.HostLive do
 
   def handle_event("deal_all", %{"deck" => id}, socket) do
     case Game.deal_all(Game.get_deck!(id)) do
-      {:ok, n} -> {:noreply, put_flash(socket, :info, "Dealt a card to #{n} guests.")}
+      {:ok, n} -> {:noreply, put_flash(socket, :info, t("Dealt a card to %{n} guests.", n: n))}
       error -> {:noreply, result(socket, error)}
     end
   end
@@ -60,7 +60,7 @@ defmodule HalloweenWeb.HostLive do
     user = Game.get_user(user_id)
 
     case Game.deal(card, user) do
-      {:ok, _} -> {:noreply, put_flash(socket, :info, "Dealt to #{user.name}.")}
+      {:ok, _} -> {:noreply, put_flash(socket, :info, t("Dealt to %{name}.", name: user.name))}
       error -> {:noreply, result(socket, error)}
     end
   end
@@ -102,17 +102,17 @@ defmodule HalloweenWeb.HostLive do
         {:noreply, put_flash(socket, :info, "#{amount} points to #{user.name}.")}
 
       _ ->
-        {:noreply, put_flash(socket, :error, "Points must be a whole number.")}
+        {:noreply, put_flash(socket, :error, t("Points must be a whole number."))}
     end
   end
 
   defp result(socket, {:ok, _}), do: clear_flash(socket)
 
   defp result(socket, {:error, :empty}),
-    do: put_flash(socket, :error, "That deck has no cards for this.")
+    do: put_flash(socket, :error, t("That deck has no cards for this."))
 
   defp result(socket, {:error, reason}),
-    do: put_flash(socket, :error, "Couldn't do that: #{inspect(reason)}")
+    do: put_flash(socket, :error, t("Couldn't do that: %{reason}", reason: inspect(reason)))
 
   @impl true
   def render(assigns) do
@@ -120,7 +120,7 @@ defmodule HalloweenWeb.HostLive do
     <Layouts.host flash={@flash} page={:live}>
       <.door requests={@requests} />
       <section class="panel stage-panel">
-        <h2>On stage</h2>
+        <h2>{t("On stage")}</h2>
         <%= if @stage do %>
           <.tarot play={@stage} class="tarot-small">
             <.countdown play={@stage} />
@@ -132,7 +132,7 @@ defmodule HalloweenWeb.HostLive do
               phx-click="stage"
               phx-value-do="close"
             >
-              Close answers
+              {t("Close answers")}
             </button>
             <button
               :if={@stage.state in ~w(open closed) and @stage.input != "none"}
@@ -140,25 +140,29 @@ defmodule HalloweenWeb.HostLive do
               phx-click="stage"
               phx-value-do="reveal"
             >
-              Reveal
+              {t("Reveal")}
             </button>
-            <button :if={@stage.deck_id} class="btn" phx-click="stage" phx-value-do="next">Next card</button>
-            <button class="btn btn-ghost" phx-click="stage" phx-value-do="finish">Clear stage</button>
+            <button :if={@stage.deck_id} class="btn" phx-click="stage" phx-value-do="next">{t(
+              "Next card"
+            )}</button>
+            <button class="btn btn-ghost" phx-click="stage" phx-value-do="finish">{t("Clear stage")}</button>
           </div>
           <.answered :if={@stage.input != "none"} play={@stage} guests={@guests} />
           <div :if={@stage.answers != [] and @stage.state != "revealed"} class="results preview">
-            <p class="meta">Only you see this until you reveal it.</p>
+            <p class="meta">{t("Only you see this until you reveal it.")}</p>
             <.results play={@stage} guests={@guests_by_id} />
           </div>
         <% else %>
           <p class="hint">
-            Nothing on stage. Draw a card from a deck below, and every phone and the TV will show it.
+            {t(
+              "Nothing on stage. Draw a card from a deck below, and every phone and the TV will show it."
+            )}
           </p>
         <% end %>
       </section>
 
       <section :if={@personal != []} class="panel">
-        <h2>Guests' cards</h2>
+        <h2>{t("Guests' cards")}</h2>
         <ul class="personal-list">
           <li :for={p <- @personal} class={p.state}>
             <.guest user={p.user} name />
@@ -171,16 +175,18 @@ defmodule HalloweenWeb.HostLive do
                   phx-value-do="approve"
                   phx-value-id={p.id}
                 >
-                  Approve{p.points > 0 && " +#{p.points}"}
+                  {t("Approve")}{p.points > 0 && " +#{p.points}"}
                 </button>
-                <button class="btn" phx-click="personal" phx-value-do="reject" phx-value-id={p.id}>Reject</button>
+                <button class="btn" phx-click="personal" phx-value-do="reject" phx-value-id={p.id}>{t(
+                  "Reject"
+                )}</button>
               <% else %>
                 <button
                   class="btn btn-ghost"
                   phx-click="personal"
                   phx-value-do="discard"
                   phx-value-id={p.id}
-                >Discard</button>
+                >{t("Discard")}</button>
               <% end %>
             </span>
           </li>
@@ -188,14 +194,15 @@ defmodule HalloweenWeb.HostLive do
       </section>
 
       <section class="panel">
-        <h2>Decks</h2>
+        <h2>{t("Decks")}</h2>
         <p :if={@decks == []} class="hint">
-          No decks yet. <.link navigate={~p"/host/decks"}>Make one, or load the starter decks.</.link>
+          {t("No decks yet.")}
+          <.link navigate={~p"/host/decks"}>{t("Make one, or load the starter decks.")}</.link>
         </p>
         <div :for={deck <- @decks} class="deck-row">
           <div class="deck-head">
             <h3>{deck.name}</h3>
-            <span class="meta">{length(deck.cards)} cards</span>
+            <span class="meta">{t("%{n} cards", n: length(deck.cards))}</span>
             <span class="actions">
               <button
                 :if={Enum.any?(deck.cards, &(&1.audience == "everyone"))}
@@ -203,21 +210,21 @@ defmodule HalloweenWeb.HostLive do
                 phx-click="draw"
                 phx-value-deck={deck.id}
               >
-                Draw
+                {t("Draw")}
               </button>
               <button
                 :if={Enum.any?(deck.cards, &(&1.audience == "personal"))}
                 class="btn"
                 phx-click="deal_all"
                 phx-value-deck={deck.id}
-                data-confirm={"Deal a card from #{deck.name} to every guest?"}
+                data-confirm={t("Deal a card from %{deck} to every guest?", deck: deck.name)}
               >
-                Deal to everyone
+                {t("Deal to everyone")}
               </button>
             </span>
           </div>
           <details>
-            <summary>Pick a card</summary>
+            <summary>{t("Pick a card")}</summary>
             <ul class="card-picker">
               <li :for={card <- deck.cards}>
                 <span>{card.text}</span>
@@ -227,14 +234,14 @@ defmodule HalloweenWeb.HostLive do
                   phx-click="play"
                   phx-value-card={card.id}
                 >
-                  Play
+                  {t("Play")}
                 </button>
                 <form :if={card.audience == "personal"} phx-submit="deal" class="inline-form">
                   <input type="hidden" name="card" value={card.id} />
-                  <select name="user" aria-label="Guest">
+                  <select name="user" aria-label={t("Guest")}>
                     <option :for={g <- @guests} value={g.id}>{g.name}</option>
                   </select>
-                  <button class="btn btn-small">Give</button>
+                  <button class="btn btn-small">{t("Give")}</button>
                 </form>
               </li>
             </ul>
@@ -243,14 +250,14 @@ defmodule HalloweenWeb.HostLive do
       </section>
 
       <section class="panel">
-        <h2>Give points</h2>
+        <h2>{t("Give points")}</h2>
         <form phx-submit="award" class="inline-form award-form">
-          <select name="user" aria-label="Guest">
+          <select name="user" aria-label={t("Guest")}>
             <option :for={g <- @guests} value={g.id}>{g.sigil} {g.name}</option>
           </select>
-          <input type="number" name="amount" value="1" aria-label="Points" />
-          <input type="text" name="reason" placeholder="What for" aria-label="Reason" />
-          <button class="btn btn-candle">Give</button>
+          <input type="number" name="amount" value="1" aria-label={t("Points")} />
+          <input type="text" name="reason" placeholder={t("What for")} aria-label={t("What for")} />
+          <button class="btn btn-candle">{t("Give")}</button>
         </form>
       </section>
     </Layouts.host>

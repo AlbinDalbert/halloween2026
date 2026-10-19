@@ -20,6 +20,16 @@ card it is never the guest themselves.
 When the host plays a card, it takes over every phone and the TV at once. When it's revealed,
 the results appear everywhere.
 
+## Language
+
+The app speaks English or Swedish: set `PARTY_LANGUAGE` to `en` (the default) or `sv`. The
+starter decks load in that language too. Decks you already have stay as they are, since they're
+your own content: load the starter decks again from the Decks page to get them in the new
+language.
+
+English is written in the code, wrapped in `t("...")`, and the Swedish is in
+`lib/halloween/text/swedish.ex`. A test fails if a text has no Swedish.
+
 ## Letting people in
 
 Anyone who can log in can knock, but nobody gets into the game until a host lets them in.
@@ -60,7 +70,7 @@ Pushes to `main` build `ghcr.io/albindalbert/halloween2026:main` (see
 `.github/workflows/image.yml`). `deploy/app` is a kustomize base: one pod with a volume for the
 SQLite database and guests' photos. Migrations run when the app starts.
 
-An overlay provides a ConfigMap `halloween-config` (`PHX_HOST`, `HOST_EMAILS`, `OIDC_ISSUER`,
-`OIDC_CLIENT_ID`), a Secret `halloween-secrets` (`SECRET_KEY_BASE`, `OIDC_CLIENT_SECRET`), and
+An overlay provides a ConfigMap `halloween-config` (`PHX_HOST`, `HOST_EMAILS`,
+`PARTY_LANGUAGE`, `OIDC_ISSUER`, `OIDC_CLIENT_ID`), a Secret `halloween-secrets` (`SECRET_KEY_BASE`, `OIDC_CLIENT_SECRET`), and
 an ingress. LiveView needs websockets through the ingress, and `PHX_HOST` must be the host the
 guests use. Add `https://<PHX_HOST>/auth/callback` as a redirect URI on the Connect application.

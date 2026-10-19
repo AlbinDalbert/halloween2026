@@ -13,7 +13,7 @@ defmodule HalloweenWeb.TvLive do
       |> EQRCode.encode()
       |> EQRCode.svg(width: 220, color: "#2a1a14", background_color: "#eadfc6")
 
-    {:ok, socket |> assign(page_title: "TV", url: url, qr: raw(qr)) |> load()}
+    {:ok, socket |> assign(page_title: t("TV"), url: url, qr: raw(qr)) |> load()}
   end
 
   @impl true
@@ -51,7 +51,7 @@ defmodule HalloweenWeb.TvLive do
               play={@stage}
               guests={@guests}
             />
-            <p :if={@stage.state == "closed"} class="tv-hush">Answers are in…</p>
+            <p :if={@stage.state == "closed"} class="tv-hush">{t("Answers are in…")}</p>
             <div :if={@stage.state == "revealed"} class="results results-tv">
               <.results play={@stage} guests={@guests_by_id} />
             </div>
@@ -59,14 +59,14 @@ defmodule HalloweenWeb.TvLive do
           <aside class="tv-join-small">{@qr}</aside>
         <% else %>
           <div class="tv-idle">
-            <h1 class="tv-title">The Halloween Table</h1>
+            <h1 class="tv-title">{t("The Halloween Table")}</h1>
             <div class="tv-join">
               {@qr}
-              <p>Scan to take your seat</p>
+              <p>{t("Scan to take your seat")}</p>
             </div>
           </div>
           <section :if={@leaderboard != []} class="tv-board">
-            <h2>Standings</h2>
+            <h2>{t("Standings")}</h2>
             <.leaderboard rows={@leaderboard} limit={10} />
           </section>
         <% end %>

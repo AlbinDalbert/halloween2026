@@ -60,6 +60,15 @@ config :halloween,
     |> String.split(",", trim: true)
     |> Enum.map(&(&1 |> String.trim() |> String.downcase()))
 
+# The app's language: en (the default) or sv. Starter decks load in it too.
+language = System.get_env("PARTY_LANGUAGE", "en")
+
+unless language in ~w(en sv) do
+  raise "PARTY_LANGUAGE must be en or sv, not #{inspect(language)}"
+end
+
+config :halloween, language: language
+
 if uploads = System.get_env("UPLOADS_PATH") do
   config :halloween, uploads_dir: uploads
 end

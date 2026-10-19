@@ -24,13 +24,13 @@ defmodule HalloweenWeb.Layouts do
   def host(assigns) do
     ~H"""
     <nav class="host-nav">
-      <span class="host-mark">Host</span>
-      <.link navigate={~p"/host"} aria-current={@page == :live && "page"}>Live</.link>
-      <.link navigate={~p"/host/decks"} aria-current={@page == :decks && "page"}>Decks</.link>
-      <.link navigate={~p"/host/guests"} aria-current={@page == :guests && "page"}>Guests</.link>
+      <span class="host-mark">{t("Host")}</span>
+      <.link navigate={~p"/host"} aria-current={@page == :live && "page"}>{t("Live")}</.link>
+      <.link navigate={~p"/host/decks"} aria-current={@page == :decks && "page"}>{t("Decks")}</.link>
+      <.link navigate={~p"/host/guests"} aria-current={@page == :guests && "page"}>{t("Guests")}</.link>
       <span class="spacer"></span>
-      <.link href={~p"/tv"} target="_blank">TV ↗</.link>
-      <.link navigate={~p"/"}>My phone</.link>
+      <.link href={~p"/tv"} target="_blank">{t("TV")} ↗</.link>
+      <.link navigate={~p"/"}>{t("My phone")}</.link>
     </nav>
     <main class="shell shell-host">
       {render_slot(@inner_block)}

@@ -6,7 +6,7 @@ defmodule HalloweenWeb.GuestsLive do
   @impl true
   def mount(_params, _session, socket) do
     if connected?(socket), do: Game.subscribe()
-    {:ok, socket |> assign(page_title: "Guests") |> load()}
+    {:ok, socket |> assign(page_title: t("Guests")) |> load()}
   end
 
   @impl true
@@ -33,7 +33,7 @@ defmodule HalloweenWeb.GuestsLive do
     user = Game.get_user(id)
 
     if user.id == socket.assigns.current_user.id do
-      {:noreply, put_flash(socket, :error, "You can't stop being a host yourself.")}
+      {:noreply, put_flash(socket, :error, t("You can't stop being a host yourself."))}
     else
       Game.set_host(user, !user.host)
       {:noreply, socket}
@@ -51,26 +51,26 @@ defmodule HalloweenWeb.GuestsLive do
     <Layouts.host flash={@flash} page={:guests}>
       <.door requests={@requests} />
       <section class="panel">
-        <h2>Guests</h2>
+        <h2>{t("Guests")}</h2>
         <p :if={@rows == []} class="hint">
-          Nobody has taken a seat yet. Put the TV on: it shows a code to scan.
+          {t("Nobody has taken a seat yet. Put the TV on: it shows a code to scan.")}
         </p>
         <ul class="guest-list">
           <li :for={{user, points} <- @rows}>
             <.guest user={user} name />
             <span class="meta">{user.email}</span>
-            <span class="score">{points} pts</span>
+            <span class="score">{t("%{n} pts", n: points)}</span>
             <span class="actions">
               <button class="btn btn-small" phx-click="host" phx-value-id={user.id}>
-                {if user.host, do: "Remove host", else: "Make host"}
+                {if user.host, do: t("Remove host"), else: t("Make host")}
               </button>
               <button
                 class="btn btn-small btn-ghost"
                 phx-click="remove"
                 phx-value-id={user.id}
-                data-confirm={"Remove #{user.name}, with their answers and points?"}
+                data-confirm={t("Remove %{name}, with their answers and points?", name: user.name)}
               >
-                Remove
+                {t("Remove")}
               </button>
             </span>
           </li>

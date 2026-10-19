@@ -15,6 +15,9 @@ config :halloween,
 config :halloween, :oidc, issuer: nil, client_id: nil, client_secret: nil
 config :halloween, host_emails: []
 
+# The app's language, `en` or `sv` (PARTY_LANGUAGE); see Halloween.Text.
+config :halloween, language: "en"
+
 # Where guests' photos are saved.
 config :halloween, uploads_dir: Path.expand("../uploads", __DIR__)
 

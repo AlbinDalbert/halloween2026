@@ -82,6 +82,7 @@ defmodule HalloweenWeb do
       # Core UI components
       import HalloweenWeb.CoreComponents
       import HalloweenWeb.GameComponents
+      import Halloween.Text
 
       # Common modules used in templates
       alias Phoenix.LiveView.JS

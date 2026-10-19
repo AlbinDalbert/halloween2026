@@ -12,7 +12,7 @@ defmodule HalloweenWeb.GuestLive do
 
     {:ok,
      socket
-     |> assign(page_title: "Your cards", editing_name: false, peeking: MapSet.new())
+     |> assign(page_title: t("Your cards"), editing_name: false, peeking: MapSet.new())
      |> allow_upload(:photo, accept: ~w(.jpg .jpeg .png .webp .gif), max_file_size: 20_000_000)
      |> load()}
   end
@@ -24,7 +24,7 @@ defmodule HalloweenWeb.GuestLive do
     case Game.get_user(socket.assigns.current_user.id) do
       nil ->
         socket
-        |> put_flash(:error, "You were turned away at the door.")
+        |> put_flash(:error, t("You were turned away at the door."))
         |> redirect(to: ~p"/login")
 
       user ->
@@ -88,7 +88,7 @@ defmodule HalloweenWeb.GuestLive do
   defp answer(socket, value) do
     case Game.answer(socket.assigns.stage.id, socket.assigns.current_user, value) do
       {:ok, _} -> socket
-      {:error, _} -> put_flash(socket, :error, "Answers are closed for this card.")
+      {:error, _} -> put_flash(socket, :error, t("Answers are closed for this card."))
     end
   end
 
@@ -96,7 +96,7 @@ defmodule HalloweenWeb.GuestLive do
   def render(%{current_user: %{name: nil}} = assigns) do
     ~H"""
     <Layouts.app flash={@flash} class="shell-phone">
-      <.name_form form={@name_form} user={@current_user} title="Who goes there?" />
+      <.name_form form={@name_form} user={@current_user} title={t("Who goes there?")} />
     </Layouts.app>
     """
   end
@@ -109,19 +109,21 @@ defmodule HalloweenWeb.GuestLive do
           <div class="tarot-inner">
             <div class="tarot-back" aria-hidden="true"></div>
             <div class="tarot-face">
-              <p class="tarot-kind">You knocked</p>
+              <p class="tarot-kind">{t("You knocked")}</p>
               <p class="door-sigil">{@current_user.sigil}</p>
-              <h1 class="tarot-text">{@current_user.name}, wait at the door</h1>
-              <p class="door-note">A host will let you in. This page opens by itself when they do.</p>
+              <h1 class="tarot-text">{t("%{name}, wait at the door", name: @current_user.name)}</h1>
+              <p class="door-note">
+                {t("A host will let you in. This page opens by itself when they do.")}
+              </p>
             </div>
           </div>
         </div>
-        <button class="link" phx-click="edit_name">Change your name or sigil</button>
+        <button class="link" phx-click="edit_name">{t("Change your name or sigil")}</button>
         <.name_form
           :if={@editing_name}
           form={@name_form}
           user={@current_user}
-          title="Change your name"
+          title={t("Change your name")}
         />
       </div>
     </Layouts.app>
@@ -135,13 +137,20 @@ defmodule HalloweenWeb.GuestLive do
         <button class="me-who" phx-click="edit_name" aria-expanded={to_string(@editing_name)}>
           <.guest user={@current_user} name />
         </button>
-        <span class="me-score">{score(@leaderboard, @current_user)} pts</span>
+        <span class="me-score">{t("%{n} pts", n: score(@leaderboard, @current_user))}</span>
       </header>
 
-      <.name_form :if={@editing_name} form={@name_form} user={@current_user} title="Change your name" />
+      <.name_form
+        :if={@editing_name}
+        form={@name_form}
+        user={@current_user}
+        title={t("Change your name")}
+      />
 
       <.link :if={@waiting > 0} navigate={~p"/host"} class="knock">
-        {if @waiting == 1, do: "Someone is", else: "#{@waiting} people are"} at the door. Let them in →
+        {if @waiting == 1,
+          do: t("Someone is at the door. Let them in →"),
+          else: t("%{n} people are at the door. Let them in →", n: @waiting)}
       </.link>
 
       <section :if={@stage} class="stage">
@@ -160,18 +169,18 @@ defmodule HalloweenWeb.GuestLive do
           :if={@stage.state == "open" and @mine != nil and @stage.input not in ~w(text photo)}
           class="hint"
         >
-          Locked in. You can change it until answers close.
+          {t("Locked in. You can change it until answers close.")}
         </p>
-        <p :if={@stage.state == "closed"} class="hint">Answers are closed. Eyes on the TV.</p>
+        <p :if={@stage.state == "closed"} class="hint">{t("Answers are closed. Eyes on the TV.")}</p>
         <div :if={@stage.state == "revealed"} class="results">
           <.results play={@stage} guests={@guests_by_id} />
         </div>
       </section>
 
       <section class="my-cards">
-        <h2>Your cards</h2>
+        <h2>{t("Your cards")}</h2>
         <p :if={@cards == []} class="hint">
-          No cards yet. The host deals them during the night.
+          {t("No cards yet. The host deals them during the night.")}
         </p>
         <div :for={card <- @cards} class={["envelope", card.state]}>
           <button
@@ -182,11 +191,13 @@ defmodule HalloweenWeb.GuestLive do
           >
             <span :if={card.state == "open"}>
               {if card.id in @peeking,
-                do: "Tap to seal it again",
-                else: "Sealed. Tap to read it in secret."}
+                do: t("Tap to seal it again"),
+                else: t("Sealed. Tap to read it in secret.")}
             </span>
-            <span :if={card.state == "claimed"}>Waiting for the host to confirm</span>
-            <span :if={card.state == "approved"}>Done{card.points > 0 && " · +#{card.points}"}</span>
+            <span :if={card.state == "claimed"}>{t("Waiting for the host to confirm")}</span>
+            <span :if={card.state == "approved"}>
+              {t("Done")}{card.points > 0 && " · +#{card.points}"}
+            </span>
           </button>
           <.tarot :if={card.id in @peeking} play={card} class="tarot-small">
             <button
@@ -195,21 +206,21 @@ defmodule HalloweenWeb.GuestLive do
               phx-click="claim"
               phx-value-id={card.id}
             >
-              I did it
+              {t("I did it")}
             </button>
           </.tarot>
         </div>
       </section>
 
       <section class="board">
-        <h2>Standings</h2>
+        <h2>{t("Standings")}</h2>
         <.leaderboard rows={@leaderboard} me={@current_user} />
       </section>
 
       <footer class="phone-footer">
-        <.link :if={@current_user.host} navigate={~p"/host"}>Host controls</.link>
+        <.link :if={@current_user.host} navigate={~p"/host"}>{t("Host controls")}</.link>
         <.form for={%{}} action={~p"/logout"}>
-          <button class="link">Log out</button>
+          <button class="link">{t("Log out")}</button>
         </.form>
       </footer>
     </Layouts.app>
@@ -224,15 +235,20 @@ defmodule HalloweenWeb.GuestLive do
     ~H"""
     <.form for={@form} phx-submit="save_name" class="name-form">
       <h1>{@title}</h1>
-      <.input field={@form[:name]} label="Your name, as the others know you" maxlength="30" autofocus />
+      <.input
+        field={@form[:name]}
+        label={t("Your name, as the others know you")}
+        maxlength="30"
+        autofocus
+      />
       <fieldset class="sigil-picker">
-        <legend>Your sigil</legend>
+        <legend>{t("Your sigil")}</legend>
         <label :for={s <- User.sigils()}>
           <input type="radio" name="user[sigil]" value={s} checked={s == @user.sigil} />
           <span>{s}</span>
         </label>
       </fieldset>
-      <button class="btn btn-candle">Take your seat</button>
+      <button class="btn btn-candle">{t("Take your seat")}</button>
     </.form>
     """
   end
@@ -297,7 +313,7 @@ defmodule HalloweenWeb.GuestLive do
       value="yes"
       disabled={@mine != nil}
     >
-      {List.first(@play.options) || "Me!"}
+      {List.first(@play.options) || t("Me!")}
     </button>
     """
   end
@@ -305,9 +321,9 @@ defmodule HalloweenWeb.GuestLive do
   defp answer_input(%{play: %{input: "text"}} = assigns) do
     ~H"""
     <form id={"text-#{@play.id}"} phx-submit="answer" class="text-answer">
-      <textarea name="value" rows="3" maxlength="280" required placeholder="Write here">{@mine && @mine.value}</textarea>
-      <button class="btn btn-candle">{if @mine, do: "Change answer", else: "Send"}</button>
-      <p :if={@mine} class="hint">Sent. You can change it until answers close.</p>
+      <textarea name="value" rows="3" maxlength="280" required placeholder={t("Write here")}>{@mine && @mine.value}</textarea>
+      <button class="btn btn-candle">{if @mine, do: t("Change answer"), else: t("Send")}</button>
+      <p :if={@mine} class="hint">{t("Sent. You can change it until answers close.")}</p>
     </form>
     """
   end
@@ -315,14 +331,14 @@ defmodule HalloweenWeb.GuestLive do
   defp answer_input(%{play: %{input: "photo"}} = assigns) do
     ~H"""
     <form id={"photo-#{@play.id}"} phx-submit="photo" phx-change="validate_photo" class="photo-answer">
-      <img :if={@mine} src={~p"/uploads/#{@mine.value}"} alt="Your photo" class="my-photo" />
+      <img :if={@mine} src={~p"/uploads/#{@mine.value}"} alt={t("Your photo")} class="my-photo" />
       <label class="btn btn-ghost file-pick">
-        {if @mine, do: "Take another", else: "Take a photo"}
+        {if @mine, do: t("Take another"), else: t("Take a photo")}
         <.live_file_input upload={@uploads.photo} capture="environment" />
       </label>
       <.live_img_preview :for={entry <- @uploads.photo.entries} entry={entry} class="my-photo" />
       <p :for={entry <- @uploads.photo.entries} :if={entry.progress > 0} class="hint">
-        Uploading {entry.progress}%
+        {t("Uploading %{n}%", n: entry.progress)}
       </p>
       <p :for={err <- upload_errors(@uploads.photo)} class="field-error">{upload_error(err)}</p>
       <p
@@ -331,7 +347,7 @@ defmodule HalloweenWeb.GuestLive do
       >
         {upload_error(err)}
       </p>
-      <button :if={@uploads.photo.entries != []} class="btn btn-candle">Send photo</button>
+      <button :if={@uploads.photo.entries != []} class="btn btn-candle">{t("Send photo")}</button>
     </form>
     """
   end
@@ -341,9 +357,9 @@ defmodule HalloweenWeb.GuestLive do
   defp picked?(nil, _value), do: false
   defp picked?(answer, value), do: answer.value == to_string(value)
 
-  defp upload_error(:too_large), do: "That photo is too big (20 MB max)."
-  defp upload_error(:not_accepted), do: "That file isn't a photo we can show."
-  defp upload_error(_), do: "The photo didn't upload. Try again."
+  defp upload_error(:too_large), do: t("That photo is too big (20 MB max).")
+  defp upload_error(:not_accepted), do: t("That file isn't a photo we can show.")
+  defp upload_error(_), do: t("The photo didn't upload. Try again.")
 
   defp score(leaderboard, user) do
     Enum.find_value(leaderboard, 0, fn {u, points} -> u.id == user.id && points end)

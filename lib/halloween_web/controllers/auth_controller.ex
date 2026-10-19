@@ -1,5 +1,6 @@
 defmodule HalloweenWeb.AuthController do
   use HalloweenWeb, :controller
+  import Halloween.Text
   require Logger
   alias Halloween.{Game, OIDC}
 
@@ -7,7 +8,7 @@ defmodule HalloweenWeb.AuthController do
     if conn.assigns.current_user do
       redirect(conn, to: ~p"/")
     else
-      render(conn, :new, page_title: "Enter")
+      render(conn, :new, page_title: t("Take your seat"))
     end
   end
 
@@ -24,11 +25,11 @@ defmodule HalloweenWeb.AuthController do
       false ->
         failed(
           conn,
-          "Login isn't set up: OIDC_ISSUER, OIDC_CLIENT_ID or OIDC_CLIENT_SECRET is missing."
+          t("Login isn't set up: OIDC_ISSUER, OIDC_CLIENT_ID or OIDC_CLIENT_SECRET is missing.")
         )
 
       error ->
-        failed(conn, "Couldn't reach the login provider. Try again.", error)
+        failed(conn, t("Couldn't reach the login provider. Try again."), error)
     end
   end
 
@@ -38,11 +39,11 @@ defmodule HalloweenWeb.AuthController do
          {:ok, user} <- Game.login(profile, Application.get_env(:halloween, :host_emails)) do
       log_in(conn, user)
     else
-      error -> failed(conn, "Login didn't work. Try again.", error)
+      error -> failed(conn, t("Login didn't work. Try again."), error)
     end
   end
 
-  def callback(conn, params), do: failed(conn, "Login didn't work. Try again.", params)
+  def callback(conn, params), do: failed(conn, t("Login didn't work. Try again."), params)
 
   @doc """
   Development only: log in as anyone with /dev/login?name=Morticia, let in at once. `host` is
