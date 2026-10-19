@@ -44,10 +44,15 @@ defmodule HalloweenWeb.AuthController do
 
   def callback(conn, params), do: failed(conn, "Login didn't work. Try again.", params)
 
-  @doc "Development only: log in as anyone with /dev/login?name=Morticia. `host` is a host."
+  @doc """
+  Development only: log in as anyone with /dev/login?name=Morticia, let in at once. `host` is
+  a host; add `&wait` to wait at the door instead.
+  """
   def dev_login(conn, %{"name" => name}) do
     {:ok, user} = Game.login(%{id: "dev-#{name}", email: "#{name}@dev"}, ["host@dev"])
     {:ok, user} = if user.name, do: {:ok, user}, else: Game.set_name(user, %{name: name})
+    # `&wait` leaves them at the door, to try letting people in.
+    {:ok, user} = if conn.params["wait"], do: {:ok, user}, else: Game.let_in(user)
     log_in(conn, user)
   end
 

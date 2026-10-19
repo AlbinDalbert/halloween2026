@@ -20,13 +20,20 @@ card it is never the guest themselves.
 When the host plays a card, it takes over every phone and the TV at once. When it's revealed,
 the results appear everywhere.
 
+## Letting people in
+
+Anyone who can log in can knock, but nobody gets into the game until a host lets them in.
+Someone new logs in, picks a name and a sigil, and waits at the door. Hosts see them at the
+top of the host page (and a notice on their own phone), and can let them in or turn them
+away. Guests whose email is in `HOST_EMAILS` are hosts and skip the door.
+
 ## Pages
 
 - `/`: a guest's phone. The card on stage, their sealed personal cards, and the standings.
 - `/tv`: the big screen. The card and its answers, or a QR code to join and the standings.
 - `/host`: draw and reveal cards, deal personal cards, approve challenges, give points.
 - `/host/decks`: make decks and cards. The first visit offers the starter decks.
-- `/host/guests`: make guests hosts, or remove them.
+- `/host/guests`: let people in, make guests hosts, or remove them.
 
 ## Development
 

@@ -214,6 +214,40 @@ defmodule HalloweenWeb.GameComponents do
     :erlang.float_to_binary(sum / length(answers), decimals: 1)
   end
 
+  @doc """
+  Guests waiting to be let in, for hosts. The page handles `let_in` and `turn_away` with the
+  guest's `id`.
+  """
+  attr :requests, :list, required: true
+
+  def door(assigns) do
+    ~H"""
+    <section :if={@requests != []} class="panel door-panel">
+      <h2>At the door</h2>
+      <ul class="guest-list">
+        <li :for={user <- @requests}>
+          <.guest :if={user.name} user={user} name />
+          <span :if={!user.name} class="hint">Still picking a name</span>
+          <span class="meta">{user.email}</span>
+          <span class="actions">
+            <button class="btn btn-candle btn-small" phx-click="let_in" phx-value-id={user.id}>
+              Let in
+            </button>
+            <button
+              class="btn btn-ghost btn-small"
+              phx-click="turn_away"
+              phx-value-id={user.id}
+              data-confirm={"Turn away #{user.name || user.email}?"}
+            >
+              Turn away
+            </button>
+          </span>
+        </li>
+      </ul>
+    </section>
+    """
+  end
+
   attr :rows, :list, required: true, doc: "`[{user, points}]` from `Game.leaderboard/0`"
   attr :limit, :integer, default: nil
   attr :me, :map, default: nil

@@ -11,6 +11,8 @@ defmodule Halloween.User do
     field :sigil, :string
     field :avatar_url, :string
     field :host, :boolean, default: false
+    # Let in by a host. Until then the guest waits at the door and sees nothing of the game.
+    field :approved, :boolean, default: false
     timestamps(type: :utc_datetime)
   end
 
@@ -18,7 +20,7 @@ defmodule Halloween.User do
 
   def changeset(user, attrs) do
     user
-    |> cast(attrs, [:workos_id, :email, :name, :sigil, :avatar_url, :host])
+    |> cast(attrs, [:workos_id, :email, :name, :sigil, :avatar_url, :host, :approved])
     |> update_change(:name, &trim/1)
     |> validate_required([:workos_id, :sigil])
     |> validate_length(:name, max: 30)

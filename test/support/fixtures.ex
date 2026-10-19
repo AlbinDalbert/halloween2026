@@ -6,6 +6,7 @@ defmodule Halloween.Fixtures do
       Game.login(%{id: "test-#{name}", email: "#{name}@test"}, opts[:hosts] || [])
 
     {:ok, user} = Game.set_name(user, %{name: name})
+    {:ok, user} = if opts[:waiting], do: {:ok, user}, else: Game.let_in(user)
     user
   end
 

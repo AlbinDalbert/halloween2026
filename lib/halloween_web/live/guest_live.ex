@@ -23,7 +23,9 @@ defmodule HalloweenWeb.GuestLive do
   defp load(socket) do
     case Game.get_user(socket.assigns.current_user.id) do
       nil ->
-        push_navigate(socket, to: ~p"/login")
+        socket
+        |> put_flash(:error, "You were turned away at the door.")
+        |> redirect(to: ~p"/login")
 
       user ->
         stage = Game.stage()
@@ -37,6 +39,7 @@ defmodule HalloweenWeb.GuestLive do
           guests_by_id: Map.new(guests, &{&1.id, &1}),
           cards: Game.personal_plays(user),
           leaderboard: Game.leaderboard(),
+          waiting: if(user.host, do: length(Game.list_requests()), else: 0),
           name_form: to_form(Game.change_name(user))
         )
     end
@@ -98,6 +101,33 @@ defmodule HalloweenWeb.GuestLive do
     """
   end
 
+  def render(%{current_user: %{approved: false}} = assigns) do
+    ~H"""
+    <Layouts.app flash={@flash} class="shell-phone">
+      <div class="door">
+        <div class="tarot tarot-door">
+          <div class="tarot-inner">
+            <div class="tarot-back" aria-hidden="true"></div>
+            <div class="tarot-face">
+              <p class="tarot-kind">You knocked</p>
+              <p class="door-sigil">{@current_user.sigil}</p>
+              <h1 class="tarot-text">{@current_user.name}, wait at the door</h1>
+              <p class="door-note">A host will let you in. This page opens by itself when they do.</p>
+            </div>
+          </div>
+        </div>
+        <button class="link" phx-click="edit_name">Change your name or sigil</button>
+        <.name_form
+          :if={@editing_name}
+          form={@name_form}
+          user={@current_user}
+          title="Change your name"
+        />
+      </div>
+    </Layouts.app>
+    """
+  end
+
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} class="shell-phone">
@@ -109,6 +139,10 @@ defmodule HalloweenWeb.GuestLive do
       </header>
 
       <.name_form :if={@editing_name} form={@name_form} user={@current_user} title="Change your name" />
+
+      <.link :if={@waiting > 0} navigate={~p"/host"} class="knock">
+        {if @waiting == 1, do: "Someone is", else: "#{@waiting} people are"} at the door. Let them in →
+      </.link>
 
       <section :if={@stage} class="stage">
         <.tarot play={@stage}>

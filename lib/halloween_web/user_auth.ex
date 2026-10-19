@@ -18,6 +18,22 @@ defmodule HalloweenWeb.UserAuth do
     end
   end
 
+  def require_approved(conn, _opts) do
+    if conn.assigns.current_user.approved do
+      conn
+    else
+      conn |> redirect(to: ~p"/") |> halt()
+    end
+  end
+
+  def on_mount(:approved, params, session, socket) do
+    case on_mount(:guest, params, session, socket) do
+      {:cont, %{assigns: %{current_user: %{approved: true}}}} = cont -> cont
+      {:cont, socket} -> {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/")}
+      halt -> halt
+    end
+  end
+
   def on_mount(:guest, _params, session, socket) do
     case session["user_id"] && Game.get_user(session["user_id"]) do
       nil -> {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/login")}
@@ -27,7 +43,7 @@ defmodule HalloweenWeb.UserAuth do
 
   def on_mount(:host, params, session, socket) do
     case on_mount(:guest, params, session, socket) do
-      {:cont, %{assigns: %{current_user: %{host: true}}}} = cont -> cont
+      {:cont, %{assigns: %{current_user: %{host: true, approved: true}}}} = cont -> cont
       {:cont, socket} -> {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/")}
       halt -> halt
     end

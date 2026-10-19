@@ -20,11 +20,26 @@ defmodule HalloweenWeb.HostLive do
       guests: guests,
       guests_by_id: Map.new(guests, &{&1.id, &1}),
       decks: Game.list_decks(),
-      personal: Game.all_personal_plays()
+      personal: Game.all_personal_plays(),
+      requests: Game.list_requests()
     )
   end
 
   @impl true
+  def handle_event("let_in", %{"id" => id}, socket) do
+    if user = Game.get_user(id), do: Game.let_in(user)
+    {:noreply, socket}
+  end
+
+  def handle_event("turn_away", %{"id" => id}, socket) do
+    case Game.get_user(id) do
+      %{approved: false} = user -> Game.remove_guest(user)
+      _ -> nil
+    end
+
+    {:noreply, socket}
+  end
+
   def handle_event("draw", %{"deck" => id}, socket) do
     {:noreply, socket |> result(Game.draw(Game.get_deck!(id)))}
   end
@@ -103,6 +118,7 @@ defmodule HalloweenWeb.HostLive do
   def render(assigns) do
     ~H"""
     <Layouts.host flash={@flash} page={:live}>
+      <.door requests={@requests} />
       <section class="panel stage-panel">
         <h2>On stage</h2>
         <%= if @stage do %>

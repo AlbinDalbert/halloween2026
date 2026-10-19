@@ -1,6 +1,6 @@
 defmodule HalloweenWeb.Router do
   use HalloweenWeb, :router
-  import HalloweenWeb.UserAuth, only: [fetch_user: 2, require_user: 2]
+  import HalloweenWeb.UserAuth, only: [fetch_user: 2, require_user: 2, require_approved: 2]
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -24,10 +24,12 @@ defmodule HalloweenWeb.Router do
   scope "/", HalloweenWeb do
     pipe_through [:browser, :require_user]
 
-    get "/uploads/:name", UploadController, :show
-
+    # Someone new waits here, at the door, until a host lets them in.
     live_session :guest, on_mount: {HalloweenWeb.UserAuth, :guest} do
       live "/", GuestLive
+    end
+
+    live_session :approved, on_mount: {HalloweenWeb.UserAuth, :approved} do
       live "/tv", TvLive
     end
 
@@ -37,6 +39,12 @@ defmodule HalloweenWeb.Router do
       live "/host/decks/:id", DeckLive
       live "/host/guests", GuestsLive
     end
+  end
+
+  scope "/", HalloweenWeb do
+    pipe_through [:browser, :require_user, :require_approved]
+
+    get "/uploads/:name", UploadController, :show
   end
 
   if Application.compile_env(:halloween, :dev_routes) do

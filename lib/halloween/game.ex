@@ -21,16 +21,25 @@ defmodule Halloween.Game do
 
   ## Guests
 
-  @doc "Guests who have picked a name. Until then they aren't in the game."
+  @doc "Guests who have been let in and picked a name. Until then they aren't in the game."
   def list_guests do
-    Repo.all(from u in User, where: not is_nil(u.name), order_by: u.name)
+    Repo.all(from u in User, where: u.approved and not is_nil(u.name), order_by: u.name)
   end
+
+  @doc "Guests waiting at the door for a host to let them in, first come first."
+  def list_requests do
+    Repo.all(from u in User, where: not u.approved, order_by: [asc: u.inserted_at, asc: u.id])
+  end
+
+  def let_in(user),
+    do: user |> Ecto.Changeset.change(approved: true) |> Repo.update() |> broadcast()
 
   def get_user(id), do: Repo.get(User, id)
 
   @doc "Creates or updates the guest who just logged in: `%{id, email, picture}` from the provider."
   def login(%{id: id} = profile, host_emails) do
     email = profile[:email]
+    host? = email != nil and String.downcase(email) in host_emails
     user = Repo.get_by(User, workos_id: id) || %User{sigil: Enum.random(User.sigils())}
 
     user
@@ -38,7 +47,8 @@ defmodule Halloween.Game do
       workos_id: id,
       email: email,
       avatar_url: profile[:picture],
-      host: user.host or (email != nil and String.downcase(email) in host_emails)
+      host: user.host or host?,
+      approved: user.approved or host?
     })
     |> Repo.insert_or_update()
     |> broadcast()
@@ -51,7 +61,10 @@ defmodule Halloween.Game do
   end
 
   def set_host(user, host?) do
-    user |> Ecto.Changeset.change(host: host?) |> Repo.update() |> broadcast()
+    user
+    |> Ecto.Changeset.change(host: host?, approved: user.approved or host?)
+    |> Repo.update()
+    |> broadcast()
   end
 
   def remove_guest(user), do: user |> Repo.delete() |> broadcast()
@@ -135,7 +148,7 @@ defmodule Halloween.Game do
   def answer(play_id, %User{} = user, value) when is_binary(value) do
     play = Repo.get!(Play, play_id)
 
-    if open?(play) and valid?(play, value) do
+    if user.approved and open?(play) and valid?(play, value) do
       %Answer{play_id: play.id, user_id: user.id, value: value}
       |> Repo.insert(
         on_conflict: {:replace, [:value, :updated_at]},
@@ -259,7 +272,7 @@ defmodule Halloween.Game do
   def get_play!(id), do: Play |> Repo.get!(id) |> Repo.preload(:user)
 
   @doc "The guest says they did it. The host approves or rejects."
-  def claim(%Play{state: "open", user_id: id} = play, %User{id: id}),
+  def claim(%Play{state: "open", user_id: id} = play, %User{id: id, approved: true}),
     do: set_state(play, "claimed")
 
   def claim(_play, _user), do: {:error, :not_yours}
@@ -291,7 +304,7 @@ defmodule Halloween.Game do
   def leaderboard do
     Repo.all(
       from u in User,
-        where: not is_nil(u.name),
+        where: u.approved and not is_nil(u.name),
         left_join: p in Point,
         on: p.user_id == u.id,
         group_by: u.id,

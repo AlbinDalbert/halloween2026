@@ -12,9 +12,23 @@ defmodule HalloweenWeb.GuestsLive do
   @impl true
   def handle_info({:game, :changed}, socket), do: {:noreply, load(socket)}
 
-  defp load(socket), do: assign(socket, rows: Game.leaderboard())
+  defp load(socket), do: assign(socket, rows: Game.leaderboard(), requests: Game.list_requests())
 
   @impl true
+  def handle_event("let_in", %{"id" => id}, socket) do
+    if user = Game.get_user(id), do: Game.let_in(user)
+    {:noreply, socket}
+  end
+
+  def handle_event("turn_away", %{"id" => id}, socket) do
+    case Game.get_user(id) do
+      %{approved: false} = user -> Game.remove_guest(user)
+      _ -> nil
+    end
+
+    {:noreply, socket}
+  end
+
   def handle_event("host", %{"id" => id}, socket) do
     user = Game.get_user(id)
 
@@ -35,6 +49,7 @@ defmodule HalloweenWeb.GuestsLive do
   def render(assigns) do
     ~H"""
     <Layouts.host flash={@flash} page={:guests}>
+      <.door requests={@requests} />
       <section class="panel">
         <h2>Guests</h2>
         <p :if={@rows == []} class="hint">

@@ -1297,3 +1297,39 @@ textarea:focus {
     transition: none !important;
   }
 }
+
+/* Waiting at the door */
+
+.door-sigil {
+  margin: 0;
+  font-family: var(--emoji), sans-serif;
+  font-size: 3.5rem;
+  line-height: 1;
+}
+
+.door-note {
+  margin: 0;
+  font: italic 1.1rem/1.35 var(--prose);
+  color: var(--candle-deep);
+}
+
+.door > .link {
+  justify-self: center;
+}
+
+.door-panel {
+  border-color: var(--candle);
+  box-shadow: 0 0 30px rgba(240, 162, 59, 0.12);
+}
+
+.knock {
+  display: block;
+  margin-bottom: 1.2rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--candle);
+  border-radius: 12px;
+  background: rgba(240, 162, 59, 0.1);
+  color: var(--candle);
+  text-decoration: none;
+  font-weight: 500;
+}
