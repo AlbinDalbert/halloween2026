@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#140c11" />
+    <meta name="csrf-token" content={get_csrf_token()} />
+    <.live_title default="The Halloween Table" suffix=" · The Halloween Table" phx-no-format>{assigns[:page_title]}</.live_title>
+    <link rel="icon" href={~p"/images/favicon.svg"} type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700&family=Courier+Prime:wght@400;700&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Noto+Color+Emoji&display=swap"
+    />
+    <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
+    <script defer src={~p"/assets/vendor/phoenix.min.js"}>
+    </script>
+    <script defer src={~p"/assets/vendor/phoenix_live_view.min.js"}>
+    </script>
+    <script defer phx-track-static src={~p"/assets/js/app.js"}>
+    </script>
+  </head>
+  <body>
+    {@inner_content}
+  </body>
+</html>

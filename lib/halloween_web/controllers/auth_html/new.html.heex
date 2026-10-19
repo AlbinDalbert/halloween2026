@@ -1,0 +1,15 @@
+<main class="shell shell-phone">
+  <div class="door">
+    <div class="tarot tarot-door">
+      <div class="tarot-inner">
+        <div class="tarot-back" aria-hidden="true"></div>
+        <div class="tarot-face">
+          <p class="tarot-kind">You are invited to</p>
+          <h1 class="tarot-text">The Halloween Table</h1>
+          <a href={~p"/auth/login"} class="btn btn-candle">Take your seat</a>
+        </div>
+      </div>
+    </div>
+    <p :if={msg = Phoenix.Flash.get(@flash, :error)} class="field-error">{msg}</p>
+  </div>
+</main>

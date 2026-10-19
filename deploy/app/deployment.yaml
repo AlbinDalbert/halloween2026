@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: halloween
+  labels:
+    app.kubernetes.io/name: halloween
+spec:
+  replicas: 1
+  # SQLite on a ReadWriteOnce volume: the old pod must stop before the new one starts.
+  # Every phone reconnects on its own after a deploy.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: halloween
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: halloween
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        # The image's `nobody`. Needs the number: kubelet can't verify a user name isn't root.
+        runAsUser: 65534
+        fsGroup: 65534
+      containers:
+        - name: halloween
+          image: halloween
+          # So `kubectl rollout restart` picks up a new `:main`.
+          imagePullPolicy: Always
+          envFrom:
+            - configMapRef:
+                name: halloween-config
+            - secretRef:
+                name: halloween-secrets
+          env:
+            # The migrations run when the app starts.
+            - name: DATABASE_PATH
+              value: /data/halloween.db
+            - name: UPLOADS_PATH
+              value: /data/uploads
+          ports:
+            - name: http
+              containerPort: 4000
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 2
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: halloween-data

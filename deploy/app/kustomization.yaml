@@ -1,0 +1,15 @@
+# The party app: one pod with its SQLite database and guests' photos on a volume.
+# Expects a ConfigMap `halloween-config` and a Secret `halloween-secrets` from the overlay.
+# See ../README.md.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - pvc.yaml
+  - deployment.yaml
+  - service.yaml
+
+images:
+  - name: halloween
+    newName: ghcr.io/albindalbert/halloween2026
+    newTag: main
