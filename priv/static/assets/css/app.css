@@ -998,6 +998,243 @@ button.link {
   font-size: 2.4rem;
 }
 
+/* Decorations on the TV between cards: drawn behind everything, switched on from the host
+   page. Each one moves a little, slowly, so the room feels alive without pulling focus. */
+
+.decor {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Behind everything on the page, but above the candlelight on the body. */
+.decor-back {
+  z-index: -1;
+}
+
+.decor-front {
+  z-index: 2;
+}
+
+/* The QR codes stay on top, so they always scan. */
+.tv-join svg,
+.tv-join-small {
+  position: relative;
+  z-index: 3;
+}
+
+.tv-join-small {
+  position: fixed;
+}
+
+.decor svg {
+  display: block;
+  overflow: visible;
+}
+
+.decor-pumpkin {
+  position: absolute;
+  left: 3vw;
+  bottom: 3vh;
+  width: 22vh;
+}
+
+.decor-pumpkin-face {
+  fill: #ffd36b;
+  filter: drop-shadow(0 0 6px #f0a23b) drop-shadow(0 0 18px #f0a23b);
+  animation: candle 2.3s ease-in-out infinite;
+}
+
+@keyframes candle {
+  0%, 100% { opacity: 1; }
+  20% { opacity: 0.75; }
+  35% { opacity: 0.95; }
+  60% { opacity: 0.7; }
+  80% { opacity: 0.9; }
+}
+
+.decor-scarecrow {
+  position: absolute;
+  right: 2vw;
+  bottom: -2vh;
+  height: 46vh;
+  width: auto;
+  transform-origin: 50% 100%;
+  animation: sway 6s ease-in-out infinite;
+}
+
+@keyframes sway {
+  0%, 100% { transform: rotate(-1.5deg); }
+  50% { transform: rotate(1.5deg); }
+}
+
+.decor-moon {
+  position: absolute;
+  top: 5vh;
+  right: 8vw;
+  width: 18vh;
+  filter: drop-shadow(0 0 30px rgba(239, 228, 196, 0.45));
+  opacity: 0.9;
+}
+
+.decor-bat {
+  position: absolute;
+  left: 0;
+  width: 5vh;
+  fill: #070405;
+  filter: drop-shadow(0 0 2px rgba(234, 223, 198, 0.35));
+  animation: fly 17s linear infinite;
+}
+
+.decor-bat svg {
+  animation: flap 0.35s ease-in-out infinite alternate;
+}
+
+.decor-bat:nth-child(1) { top: 12vh; }
+.decor-bat:nth-child(2) { top: 22vh; width: 3.5vh; animation-duration: 23s; animation-delay: -9s; }
+.decor-bat:nth-child(3) { top: 8vh; width: 4vh; animation-duration: 29s; animation-delay: -20s; }
+
+@keyframes fly {
+  0% { transform: translate(-10vw, 0); }
+  25% { transform: translate(25vw, 6vh); }
+  50% { transform: translate(55vw, -3vh); }
+  75% { transform: translate(85vw, 5vh); }
+  100% { transform: translate(115vw, 0); }
+}
+
+@keyframes flap {
+  from { transform: scaleY(1); }
+  to { transform: scaleY(0.35); }
+}
+
+.decor-spider {
+  position: absolute;
+  top: 0;
+  left: 36vw;
+  width: 3.5vh;
+  animation: dangle 11s ease-in-out infinite;
+}
+
+.decor-thread {
+  stroke: rgba(234, 223, 198, 0.45);
+  stroke-width: 0.8;
+}
+
+.decor-legs {
+  fill: none;
+  stroke: #0d090b;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.decor-spider-body {
+  fill: #0d090b;
+  stroke: rgba(234, 223, 198, 0.3);
+  stroke-width: 1;
+}
+
+@keyframes dangle {
+  0%, 100% { transform: translateY(6vh); }
+  45%, 55% { transform: translateY(32vh); }
+}
+
+.decor-ghost {
+  position: absolute;
+  top: 30vh;
+  left: 0;
+  width: 10vh;
+  opacity: 0.55;
+  animation: haunt 45s ease-in-out infinite;
+}
+
+.decor-ghost svg {
+  animation: bob 3.5s ease-in-out infinite;
+}
+
+@keyframes haunt {
+  0% { transform: translateX(-15vw); }
+  50% { transform: translateX(110vw); }
+  50.01% { transform: translateX(110vw) scaleX(-1); }
+  100% { transform: translateX(-15vw) scaleX(-1); }
+}
+
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2.5vh); }
+}
+
+.decor-eyes span {
+  position: absolute;
+  width: 4.5vh;
+  fill: #e8d04a;
+  filter: drop-shadow(0 0 6px #e8d04a);
+  transform-origin: 50% 50%;
+  animation: blink 7s infinite;
+}
+
+.decor-eyes span:nth-child(1) { left: 18vw; bottom: 8vh; }
+.decor-eyes span:nth-child(2) { left: 46vw; bottom: 4vh; width: 3vh; fill: #c2452d; filter: drop-shadow(0 0 6px #c2452d); animation-delay: -2s; animation-duration: 9s; }
+.decor-eyes span:nth-child(3) { right: 26vw; bottom: 12vh; width: 3.5vh; animation-delay: -4.5s; animation-duration: 6s; }
+.decor-eyes span:nth-child(4) { left: 2vw; top: 45vh; width: 3vh; fill: #8fbf8a; filter: drop-shadow(0 0 6px #8fbf8a); animation-delay: -1s; animation-duration: 11s; }
+
+/* Mostly open, a quick blink, then gone for a while, then back. */
+@keyframes blink {
+  0%, 40%, 44%, 70% { opacity: 1; transform: scaleY(1); }
+  42% { opacity: 1; transform: scaleY(0.1); }
+  74%, 92% { opacity: 0; transform: scaleY(1); }
+  96%, 100% { opacity: 1; }
+}
+
+.decor-cobwebs svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 28vh;
+}
+
+.decor-web path {
+  fill: none;
+  stroke: rgba(234, 223, 198, 0.3);
+  stroke-width: 1.2;
+}
+
+.decor-cobwebs .decor-web-right {
+  left: auto;
+  right: 0;
+  transform: scaleX(-1);
+}
+
+.decor-fog::before,
+.decor-fog::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -6vh;
+  width: 200%;
+  height: 34vh;
+  /* A tile repeated four times; sliding it by half the width loops without a seam. */
+  background:
+    radial-gradient(ellipse 30% 50% at 20% 70%, rgba(234, 223, 198, 0.16), transparent 70%),
+    radial-gradient(ellipse 36% 45% at 55% 80%, rgba(234, 223, 198, 0.12), transparent 70%),
+    radial-gradient(ellipse 28% 55% at 85% 72%, rgba(234, 223, 198, 0.15), transparent 70%);
+  background-size: 25% 100%;
+  filter: blur(12px);
+  animation: drift 70s linear infinite;
+}
+
+.decor-fog::after {
+  bottom: -12vh;
+  opacity: 0.7;
+  animation-duration: 45s;
+  animation-direction: reverse;
+}
+
+@keyframes drift {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
 /* Host */
 
 .host-nav {
@@ -1191,6 +1428,51 @@ button.link {
   flex: 1 1 12rem;
 }
 
+.panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.panel-head h2 {
+  margin: 0;
+}
+
+.personal-text.sealed {
+  color: var(--mist);
+  font-style: italic;
+}
+
+.deal-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+  margin-top: 0.6rem;
+}
+
+.deal-form label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.deal-form input[type="number"] {
+  width: 4.5rem;
+}
+
+.deal-plan {
+  flex-basis: 100%;
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.deal-plan .warn {
+  color: var(--candle);
+}
+
 .award-form input[type="text"] {
   flex: 1 1 10rem;
 }
@@ -1296,6 +1578,18 @@ textarea:focus {
     animation-iteration-count: 1 !important;
     transition: none !important;
   }
+}
+
+.decoration-picker {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  justify-items: center;
+  gap: 0.5rem 1.4rem;
+}
+
+.decoration-picker > span:nth-child(3n + 1) {
+  justify-self: start;
 }
 
 /* Waiting at the door */

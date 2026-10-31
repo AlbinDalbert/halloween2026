@@ -30,6 +30,13 @@ defmodule HalloweenWeb.DecksLive do
     {:noreply, put_flash(socket, :info, t("Starter decks loaded."))}
   end
 
+  def handle_event("starter_one", %{"language" => language, "index" => index}, socket) do
+    case Starter.load(language, String.to_integer(index)) do
+      {:ok, deck} -> {:noreply, push_navigate(socket, to: ~p"/host/decks/#{deck}")}
+      {:error, _} -> {:noreply, socket}
+    end
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -69,7 +76,29 @@ defmodule HalloweenWeb.DecksLive do
           <button class="btn btn-candle">{t("Create deck")}</button>
         </.form>
       </section>
+
+      <section class="panel">
+        <h2>{t("Start from a starter deck")}</h2>
+        <p class="hint">{t("Makes a copy you can edit. Pick a language to play it in.")}</p>
+        <ul class="card-list">
+          <li :for={s <- Starter.list()} id={"starter-#{s.language}-#{s.index}"}>
+            <span class="card-text"><strong>{s.name}</strong> · {s.description}</span>
+            <span class="meta">{language_name(s.language)} · {t("%{n} cards", n: s.cards)}</span>
+            <button
+              class="btn btn-small"
+              phx-click="starter_one"
+              phx-value-language={s.language}
+              phx-value-index={s.index}
+            >
+              {t("Add")}
+            </button>
+          </li>
+        </ul>
+      </section>
     </Layouts.host>
     """
   end
+
+  defp language_name("en"), do: "English"
+  defp language_name("sv"), do: "Svenska"
 end

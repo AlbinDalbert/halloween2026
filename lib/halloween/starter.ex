@@ -2,17 +2,42 @@ defmodule Halloween.Starter do
   @moduledoc "Decks to start from. Loaded from the Decks page; edit them like any other."
   alias Halloween.{Card, Deck, Game}
 
-  def load do
-    for {name, description, card_attrs, texts} <- decks(Halloween.Text.language()) do
-      {:ok, deck} = Game.save_deck(%Deck{}, %{name: name, description: description})
+  @doc "Loads every starter deck in the party's language."
+  def load, do: Enum.each(decks(Halloween.Text.language()), &add/1)
 
-      for text <- texts do
-        attrs =
-          if is_map(text), do: Map.merge(card_attrs, text), else: Map.put(card_attrs, :text, text)
-
-        {:ok, _} = Game.save_card(%Card{}, Map.put(attrs, :deck_id, deck.id))
-      end
+  @doc "Loads one starter deck, in any language, by its place in `list/0`."
+  def load(language, index) when language in ~w(en sv) do
+    case Enum.at(decks(language), index) do
+      nil -> {:error, :not_found}
+      deck -> add(deck)
     end
+  end
+
+  @doc "Every starter deck in every language, to pick one from."
+  def list do
+    for language <- ~w(en sv),
+        {{name, description, _, texts}, index} <- Enum.with_index(decks(language)) do
+      %{
+        language: language,
+        index: index,
+        name: name,
+        description: description,
+        cards: length(texts)
+      }
+    end
+  end
+
+  defp add({name, description, card_attrs, texts}) do
+    {:ok, deck} = Game.save_deck(%Deck{}, %{name: name, description: description})
+
+    for text <- texts do
+      attrs =
+        if is_map(text), do: Map.merge(card_attrs, text), else: Map.put(card_attrs, :text, text)
+
+      {:ok, _} = Game.save_card(%Card{}, Map.put(attrs, :deck_id, deck.id))
+    end
+
+    {:ok, deck}
   end
 
   defp decks("en") do

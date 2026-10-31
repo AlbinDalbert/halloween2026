@@ -10,13 +10,13 @@ defmodule HalloweenWeb.GameLiveTest do
     assert {:error, {:redirect, %{to: "/login"}}} = live(conn, ~p"/")
   end
 
-  test "a new guest picks a name first", %{conn: conn} do
+  test "a new guest picks a name first, then waits at the door", %{conn: conn} do
     {:ok, user} = Game.login(%{id: "new", email: "new@test"}, [])
     {:ok, view, _html} = live(log_in(conn, user), ~p"/")
 
     assert render(view) =~ "Who goes there?"
     view |> form(".name-form", user: %{name: "Lurch"}) |> render_submit()
-    assert render(view) =~ "Your cards"
+    assert render(view) =~ "wait at the door"
   end
 
   test "a card on stage takes over every phone, and tapping a guest votes", %{conn: conn} do
@@ -69,6 +69,23 @@ defmodule HalloweenWeb.GameLiveTest do
 
     view |> element("button", "Reveal") |> render_click()
     assert Game.stage().state == "revealed"
+  end
+
+  test "the host deals missions to everyone, sealed until they choose to look", %{conn: conn} do
+    host = guest("Hank", hosts: ["hank@test"])
+    guest("Alice")
+    deck = deck([%{audience: "personal", input: "button", text: "Steal a sock"}])
+    {:ok, view, _html} = live(log_in(conn, host), ~p"/host")
+
+    view |> form("#deal-#{deck.id}", each: "2") |> render_change()
+    assert has_element?(view, "#deal-#{deck.id} .deal-plan .warn")
+
+    view |> form("#deal-#{deck.id}", each: "2") |> render_submit()
+    assert length(Game.all_personal_plays()) == 4
+    refute view |> element("#personal-list") |> render() =~ "Steal a sock"
+
+    view |> element("#show-missions") |> render_click()
+    assert view |> element("#personal-list") |> render() =~ "Steal a sock"
   end
 
   test "the host builds a deck", %{conn: conn} do

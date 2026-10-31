@@ -1,12 +1,16 @@
 defmodule HalloweenWeb.HostLive do
   @moduledoc "The host's remote control: what's on stage, decks to play from, challenges to confirm."
   use HalloweenWeb, :live_view
-  alias Halloween.Game
+  alias Halloween.{Decoration, Game}
 
   @impl true
   def mount(_params, _session, socket) do
     if connected?(socket), do: Game.subscribe()
-    {:ok, socket |> assign(page_title: t("Host")) |> load()}
+
+    {:ok,
+     socket
+     |> assign(page_title: t("Host"), deal_each: %{}, show_missions: false)
+     |> load()}
   end
 
   @impl true
@@ -21,7 +25,8 @@ defmodule HalloweenWeb.HostLive do
       guests_by_id: Map.new(guests, &{&1.id, &1}),
       decks: Game.list_decks(),
       personal: Game.all_personal_plays(),
-      requests: Game.list_requests()
+      requests: Game.list_requests(),
+      decorations: Map.new(Decoration.scenes(), &{&1, Game.decorations(&1)})
     )
   end
 
@@ -48,12 +53,25 @@ defmodule HalloweenWeb.HostLive do
     {:noreply, socket |> result(Game.play(Game.get_card!(id)))}
   end
 
-  def handle_event("deal_all", %{"deck" => id}, socket) do
-    case Game.deal_all(Game.get_deck!(id)) do
-      {:ok, n} -> {:noreply, put_flash(socket, :info, t("Dealt a card to %{n} guests.", n: n))}
-      error -> {:noreply, result(socket, error)}
+  def handle_event("deal_plan", %{"deck" => id, "each" => each}, socket) do
+    {:noreply, assign(socket, deal_each: Map.put(socket.assigns.deal_each, id, each(each)))}
+  end
+
+  def handle_event("deal_all", %{"deck" => id, "each" => each}, socket) do
+    each = each(each)
+
+    case Game.deal_all(Game.get_deck!(id), each) do
+      {:ok, n} ->
+        {:noreply,
+         put_flash(socket, :info, t("Dealt %{each} each to %{n} guests.", each: each, n: n))}
+
+      error ->
+        {:noreply, result(socket, error)}
     end
   end
+
+  def handle_event("show_missions", _params, socket),
+    do: {:noreply, assign(socket, show_missions: !socket.assigns.show_missions)}
 
   def handle_event("deal", %{"card" => card_id, "user" => user_id}, socket) do
     card = Game.get_card!(card_id)
@@ -94,6 +112,11 @@ defmodule HalloweenWeb.HostLive do
     {:noreply, result(socket, result)}
   end
 
+  def handle_event("decorate", params, socket) do
+    for scene <- Decoration.scenes(), do: Game.decorate(scene, Map.get(params, scene, []))
+    {:noreply, socket}
+  end
+
   def handle_event("award", %{"user" => user_id, "amount" => amount, "reason" => reason}, socket) do
     case Integer.parse(amount) do
       {amount, ""} ->
@@ -103,6 +126,14 @@ defmodule HalloweenWeb.HostLive do
 
       _ ->
         {:noreply, put_flash(socket, :error, t("Points must be a whole number."))}
+    end
+  end
+
+  # Missions each, from the deal form: a whole number from 1 to 20.
+  defp each(value) do
+    case Integer.parse(value) do
+      {n, ""} -> n |> max(1) |> min(20)
+      _ -> 1
     end
   end
 
@@ -162,11 +193,19 @@ defmodule HalloweenWeb.HostLive do
       </section>
 
       <section :if={@personal != []} class="panel">
-        <h2>{t("Guests' cards")}</h2>
-        <ul class="personal-list">
+        <div class="panel-head">
+          <h2>{t("Guests' cards")}</h2>
+          <button id="show-missions" class="btn btn-small btn-ghost" phx-click="show_missions">
+            {if(@show_missions, do: t("Hide"), else: t("Show what everyone got"))}
+          </button>
+        </div>
+        <ul id="personal-list" class="personal-list">
           <li :for={p <- @personal} class={p.state}>
             <.guest user={p.user} name />
-            <span class="personal-text">{p.text}</span>
+            <span :if={p.state == "claimed" or @show_missions} class="personal-text">{p.text}</span>
+            <span :if={p.state != "claimed" and !@show_missions} class="personal-text sealed">
+              {t("Sealed")}
+            </span>
             <span class="actions">
               <%= if p.state == "claimed" do %>
                 <button
@@ -212,17 +251,33 @@ defmodule HalloweenWeb.HostLive do
               >
                 {t("Draw")}
               </button>
-              <button
-                :if={Enum.any?(deck.cards, &(&1.audience == "personal"))}
-                class="btn"
-                phx-click="deal_all"
-                phx-value-deck={deck.id}
-                data-confirm={t("Deal a card from %{deck} to every guest?", deck: deck.name)}
-              >
-                {t("Deal to everyone")}
-              </button>
             </span>
           </div>
+          <form
+            :if={Enum.any?(deck.cards, &(&1.audience == "personal"))}
+            id={"deal-#{deck.id}"}
+            phx-change="deal_plan"
+            phx-submit="deal_all"
+            class="deal-form"
+          >
+            <input type="hidden" name="deck" value={deck.id} />
+            <label>
+              {t("Missions each")}
+              <input
+                type="number"
+                name="each"
+                min="1"
+                max="20"
+                value={Map.get(@deal_each, to_string(deck.id), 1)}
+              />
+            </label>
+            <button class="btn">{t("Deal to everyone")}</button>
+            <.deal_plan
+              cards={Enum.count(deck.cards, &(&1.audience == "personal"))}
+              guests={length(@guests)}
+              each={Map.get(@deal_each, to_string(deck.id), 1)}
+            />
+          </form>
           <details>
             <summary>{t("Pick a card")}</summary>
             <ul class="card-picker">
@@ -260,7 +315,77 @@ defmodule HalloweenWeb.HostLive do
           <button class="btn btn-candle">{t("Give")}</button>
         </form>
       </section>
+
+      <section class="panel">
+        <h2>{t("Decorations")}</h2>
+        <p class="hint">
+          {t("On the TV. Pick them separately for between cards and during a card.")}
+        </p>
+        <form id="decorations-form" phx-change="decorate" class="decoration-picker">
+          <span></span>
+          <span class="meta">{t("Between cards")}</span>
+          <span class="meta">{t("During a card")}</span>
+          <%= for name <- Decoration.names() do %>
+            <span>{decoration_label(name)}</span>
+            <input
+              :for={scene <- Decoration.scenes()}
+              type="checkbox"
+              name={"#{scene}[]"}
+              value={name}
+              checked={name in @decorations[scene]}
+              id={"decoration-#{scene}-#{name}"}
+              aria-label={decoration_label(name)}
+            />
+          <% end %>
+        </form>
+      </section>
     </Layouts.host>
+    """
+  end
+
+  defp decoration_label("pumpkin"), do: t("Jack-o'-lantern")
+  defp decoration_label("scarecrow"), do: t("Scarecrow")
+  defp decoration_label("moon"), do: t("Full moon")
+  defp decoration_label("bats"), do: t("Bats")
+  defp decoration_label("ghost"), do: t("Ghost")
+  defp decoration_label("spider"), do: t("Spider")
+  defp decoration_label("cobwebs"), do: t("Cobwebs")
+  defp decoration_label("eyes"), do: t("Eyes in the dark")
+  defp decoration_label("fog"), do: t("Fog")
+
+  attr :cards, :integer, required: true
+  attr :guests, :integer, required: true
+  attr :each, :integer, required: true
+
+  # What a deal will do, in counts only: never who gets which card.
+  defp deal_plan(assigns) do
+    assigns = assign(assigns, total: assigns.guests * assigns.each)
+
+    ~H"""
+    <ul class="deal-plan meta">
+      <li>
+        {t("%{guests} guests × %{each} = %{total} missions, from a deck of %{cards}.",
+          guests: @guests,
+          each: @each,
+          total: @total,
+          cards: @cards
+        )}
+      </li>
+      <%= if @total <= @cards do %>
+        <li>{t("Every mission goes to one guest only.")}</li>
+      <% else %>
+        <li>
+          {t("The deck runs out, so it's reshuffled: a mission goes to at most %{n} guests.",
+            n: ceil(@total / @cards)
+          )}
+        </li>
+      <% end %>
+      <li :if={@each > @cards} class="warn">
+        {t("That's more each than the deck has, so guests get some missions twice.")}
+      </li>
+      <li>{t("Missions nobody holds right now go out first.")}</li>
+      <li>{t("Who gets what is random, and sealed from you too until you choose to look.")}</li>
+    </ul>
     """
   end
 end

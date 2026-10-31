@@ -6,7 +6,7 @@ defmodule Halloween.Game do
   when it hears it, so all phones and the TV stay in sync without tracking what changed.
   """
   import Ecto.Query
-  alias Halloween.{Answer, Card, Deck, Play, Point, Repo, User}
+  alias Halloween.{Answer, Card, Deck, Decoration, Play, Point, Repo, User}
 
   @topic "game"
   @live_stage ~w(open closed revealed)
@@ -104,6 +104,7 @@ defmodule Halloween.Game do
         limit: 1,
         preload: [answers: :user]
     )
+    |> named()
   end
 
   @doc "Puts a random card from the deck on stage, preferring cards that haven't been played."
@@ -130,7 +131,7 @@ defmodule Halloween.Game do
 
     {:ok, play} =
       card
-      |> new_play(fill(card.text, list_guests()))
+      |> new_play(pick_guests(card.text, list_guests()))
       |> Map.merge(%{state: "open", closes_at: closes_at})
       |> Repo.insert()
 
@@ -223,7 +224,7 @@ defmodule Halloween.Game do
 
   @doc "Deals a card to one guest. `{guest}` never becomes the guest themselves."
   def deal(%Card{audience: "personal"} = card, %User{} = user) do
-    text = fill(card.text, Enum.reject(list_guests(), &(&1.id == user.id)))
+    text = pick_guests(card.text, Enum.reject(list_guests(), &(&1.id == user.id)))
 
     card
     |> new_play(text)
@@ -232,21 +233,36 @@ defmodule Halloween.Game do
     |> broadcast()
   end
 
-  @doc "Deals every guest a card from the deck, preferring cards they haven't had."
-  def deal_all(%Deck{} = deck) do
+  @doc """
+  Deals every guest `per_guest` cards from the deck, the way you'd deal from a shuffled pile:
+  everyone gets one, then everyone gets another. Cards nobody holds right now are on top. When
+  the pile runs out it's reshuffled, so no card goes out twice before every card has gone out
+  once. Nobody gets a card they've already had while the pile has another for them.
+  """
+  def deal_all(%Deck{} = deck, per_guest \\ 1) do
     cards = Enum.filter(deck.cards, &(&1.audience == "personal"))
+    guests = list_guests()
 
     if cards == [] do
       {:error, :empty}
     else
-      had = Repo.all(from p in Play, where: p.deck_id == ^deck.id, select: {p.user_id, p.card_id})
+      plays = Repo.all(from p in Play, where: p.deck_id == ^deck.id)
+      had = MapSet.new(plays, &{&1.user_id, &1.card_id})
+      held = MapSet.new(for p <- plays, p.state in ~w(open claimed), do: p.card_id)
+      {fresh, out} = Enum.split_with(cards, &(&1.id not in held))
 
-      for user <- list_guests() do
-        pool = Enum.reject(cards, &({user.id, &1.id} in had))
-        deal(Enum.random(if pool == [], do: cards, else: pool), user)
-      end
+      # One turn per card to deal: round after round, everyone once per round.
+      turns = for _ <- 1..per_guest//1, user <- guests, do: user
+      pile = Enum.shuffle(fresh) ++ Enum.shuffle(out)
 
-      {:ok, length(list_guests())}
+      Enum.reduce(turns, {pile, had}, fn user, {pile, had} ->
+        pile = if pile == [], do: Enum.shuffle(cards), else: pile
+        card = Enum.find(pile, &({user.id, &1.id} not in had)) || hd(pile)
+        {:ok, _} = deal(card, user)
+        {List.delete(pile, card), MapSet.put(had, {user.id, card.id})}
+      end)
+
+      {:ok, length(guests)}
     end
   end
 
@@ -257,6 +273,7 @@ defmodule Halloween.Game do
         where: p.user_id == ^user.id and p.state in @live_personal,
         order_by: [desc: p.id]
     )
+    |> named()
   end
 
   @doc "Every guest's cards still in play, for the host."
@@ -267,9 +284,10 @@ defmodule Halloween.Game do
         order_by: [desc: p.state == "claimed", desc: p.id],
         preload: :user
     )
+    |> named()
   end
 
-  def get_play!(id), do: Play |> Repo.get!(id) |> Repo.preload(:user)
+  def get_play!(id), do: Play |> Repo.get!(id) |> Repo.preload(:user) |> named()
 
   @doc "The guest says they did it. The host approves or rejects."
   def claim(%Play{state: "open", user_id: id} = play, %User{id: id, approved: true}),
@@ -313,18 +331,61 @@ defmodule Halloween.Game do
     )
   end
 
+  ## Decorations
+
+  @doc "The names of the decorations that are on in a scene, `idle` or `stage`."
+  def decorations(scene),
+    do: Repo.all(from d in Decoration, where: d.scene == ^scene, select: d.name)
+
+  @doc "Turns on exactly these decorations in a scene, and the rest off. Unknown names are ignored."
+  def decorate(scene, names) when scene in ["idle", "stage"] do
+    Repo.transact(fn ->
+      Repo.delete_all(from d in Decoration, where: d.scene == ^scene)
+
+      for name <- Decoration.names(),
+          name in names,
+          do: Repo.insert!(%Decoration{scene: scene, name: name})
+
+      {:ok, :ok}
+    end)
+    |> broadcast()
+  end
+
   ## Helpers
 
   @doc "Replaces each `{guest}` with a different random guest's name, where there are enough."
-  def fill(text, guests) do
+  def fill(text, guests), do: text |> pick_guests(guests) |> name_guests(guests)
+
+  @doc """
+  Picks a different random guest for each `{guest}`, where there are enough, and marks who as
+  `{guest:id}`. A play keeps the marks, so it always shows the name the guest goes by now.
+  """
+  def pick_guests(text, guests) do
     [first | rest] = String.split(text, "{guest}")
 
-    names =
-      if guests == [], do: ["someone"], else: guests |> Enum.shuffle() |> Enum.map(& &1.name)
+    marks =
+      if guests == [],
+        do: ["someone"],
+        else: guests |> Enum.shuffle() |> Enum.map(&"{guest:#{&1.id}}")
 
     rest
-    |> Enum.zip(Stream.cycle(names))
-    |> Enum.reduce(first, fn {part, name}, acc -> acc <> name <> part end)
+    |> Enum.zip(Stream.cycle(marks))
+    |> Enum.reduce(first, fn {part, mark}, acc -> acc <> mark <> part end)
+  end
+
+  @doc "Puts each marked guest's name in the text, or someone if they've left."
+  def name_guests(text, guests) do
+    names = Map.new(guests, &{to_string(&1.id), &1.name})
+    Regex.replace(~r/\{guest:(\d+)\}/, text, fn _, id -> Map.get(names, id) || "someone" end)
+  end
+
+  # Plays as screens show them: with the marked guests' names as they are now.
+  defp named(nil), do: nil
+  defp named(%Play{} = play), do: hd(named([play]))
+
+  defp named(plays) when is_list(plays) do
+    guests = Repo.all(User)
+    Enum.map(plays, &%{&1 | text: name_guests(&1.text, guests)})
   end
 
   defp new_play(card, text) do
@@ -335,7 +396,8 @@ defmodule Halloween.Game do
       audience: card.audience,
       input: card.input,
       reveal: card.reveal,
-      options: card.options,
+      options:
+        if(card.input == "pick_option", do: Enum.shuffle(card.options), else: card.options),
       correct: card.correct,
       points: card.points
     }

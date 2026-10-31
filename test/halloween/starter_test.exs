@@ -16,4 +16,13 @@ defmodule Halloween.StarterTest do
     assert "Maskeradtävling" in names
     assert "Pekleken" in names
   end
+
+  test "one starter deck loads in any language, whatever the party's language" do
+    sv = Enum.find(Starter.list(), &(&1.language == "sv" and &1.name == "Halloweenquiz"))
+    {:ok, deck} = Starter.load("sv", sv.index)
+
+    assert [%{name: "Halloweenquiz"} = loaded] = Game.list_decks()
+    assert loaded.id == deck.id
+    assert length(loaded.cards) == sv.cards
+  end
 end

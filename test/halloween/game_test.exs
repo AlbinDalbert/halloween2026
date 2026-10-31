@@ -79,6 +79,21 @@ defmodule Halloween.GameTest do
     end
   end
 
+  test "decorate turns on exactly the decorations given, ignoring unknown ones" do
+    {:ok, _} = Game.decorate("idle", ["pumpkin", "scarecrow", "unicorn"])
+    assert Enum.sort(Game.decorations("idle")) == ["pumpkin", "scarecrow"]
+
+    {:ok, _} = Game.decorate("idle", ["bats"])
+    assert Game.decorations("idle") == ["bats"]
+  end
+
+  test "each scene has its own decorations" do
+    {:ok, _} = Game.decorate("idle", ["pumpkin", "fog"])
+    {:ok, _} = Game.decorate("stage", ["pumpkin"])
+    assert Enum.sort(Game.decorations("idle")) == ["fog", "pumpkin"]
+    assert Game.decorations("stage") == ["pumpkin"]
+  end
+
   describe "personal cards" do
     test "deal_all deals everyone a card that never names themselves", %{alice: a} do
       deck = deck([%{audience: "personal", input: "button", text: "Hug {guest}", points: 3}])
@@ -90,6 +105,45 @@ defmodule Halloween.GameTest do
       {:ok, play} = Game.claim(play, a)
       {:ok, _} = Game.approve(play)
       assert points(a) == 3
+    end
+
+    test "deal_all/2 deals like a shuffled pile: no repeats until the pile runs out" do
+      cards = for i <- 1..4, do: %{audience: "personal", input: "button", text: "Mission #{i}"}
+      deck = deck(cards)
+      {:ok, 3} = Game.deal_all(deck, 2)
+
+      plays = Game.all_personal_plays()
+      assert length(plays) == 6
+
+      # Everyone has two different missions.
+      for {_user, theirs} <- Enum.group_by(plays, & &1.user_id) do
+        assert length(Enum.uniq_by(theirs, & &1.card_id)) == 2
+      end
+
+      # Six from a pile of four: every mission went out, none more than twice.
+      counts = plays |> Enum.frequencies_by(& &1.card_id) |> Map.values()
+      assert length(counts) == 4
+      assert Enum.max(counts) == 2
+    end
+
+    test "deal_all/2 gives out missions nobody holds before ones that are out" do
+      deck = deck(for i <- 1..3, do: %{audience: "personal", input: "button", text: "M#{i}"})
+      {:ok, 3} = Game.deal_all(deck)
+      {:ok, 3} = Game.deal_all(deck)
+
+      # Each guest got a different card each time, so all three are held twice now.
+      counts = Game.all_personal_plays() |> Enum.frequencies_by(& &1.card_id) |> Map.values()
+      assert counts == [2, 2, 2]
+    end
+
+    test "a mission shows the name its guest goes by now", %{alice: a, bob: b, cleo: c} do
+      deck = deck([%{audience: "personal", input: "button", text: "Hug {guest}"}])
+      {:ok, _} = Game.deal(hd(deck.cards), a)
+      {:ok, _} = Game.set_name(b, %{name: "Bobby"})
+      {:ok, _} = Game.set_name(c, %{name: "Cleopatra"})
+
+      [play] = Game.personal_plays(a)
+      assert play.text in ["Hug Bobby", "Hug Cleopatra"]
     end
 
     test "only the guest it was dealt to can claim it", %{alice: a, bob: b} do

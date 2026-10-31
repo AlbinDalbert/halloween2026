@@ -45,7 +45,7 @@ defmodule Halloween.Text.Swedish do
       "%{n} people are at the door. Let them in →" => "%{n} personer står vid dörren. Släpp in →",
 
       # Logging in
-      "The Halloween Table" => "Halloweenbordet",
+      "The Halloween Table" => "Halloween 2026",
       "You are invited to" => "Du är bjuden till",
       "Take your seat" => "Ta plats",
       "Login isn't set up: OIDC_ISSUER, OIDC_CLIENT_ID or OIDC_CLIENT_SECRET is missing." =>
@@ -114,8 +114,6 @@ defmodule Halloween.Text.Swedish do
       "Make one, or load the starter decks." => "Gör en, eller hämta startlekarna.",
       "%{n} cards" => "%{n} kort",
       "Draw" => "Dra",
-      "Deal a card from %{deck} to every guest?" =>
-        "Dela ut ett kort ur %{deck} till alla gäster?",
       "Deal to everyone" => "Dela ut till alla",
       "Pick a card" => "Välj ett kort",
       "Play" => "Spela",
@@ -123,8 +121,23 @@ defmodule Halloween.Text.Swedish do
       "Give" => "Ge",
       "Give points" => "Ge poäng",
       "What for" => "För vad",
-      "Dealt a card to %{n} guests." => "Delade ut ett kort till %{n} gäster.",
       "Dealt to %{name}." => "Utdelat till %{name}.",
+      "Dealt %{each} each to %{n} guests." => "Delade ut %{each} var till %{n} gäster.",
+      "Missions each" => "Uppdrag var",
+      "%{guests} guests × %{each} = %{total} missions, from a deck of %{cards}." =>
+        "%{guests} gäster × %{each} = %{total} uppdrag, ur en kortlek med %{cards}.",
+      "Every mission goes to one guest only." => "Varje uppdrag går bara till en gäst.",
+      "The deck runs out, so it's reshuffled: a mission goes to at most %{n} guests." =>
+        "Kortleken tar slut och blandas om: ett uppdrag går till högst %{n} gäster.",
+      "That's more each than the deck has, so guests get some missions twice." =>
+        "Det är fler per person än kortleken har, så gäster får vissa uppdrag två gånger.",
+      "Missions nobody holds right now go out first." =>
+        "Uppdrag som ingen har just nu delas ut först.",
+      "Who gets what is random, and sealed from you too until you choose to look." =>
+        "Vem som får vad slumpas, och är förseglat även för dig tills du väljer att titta.",
+      "Show what everyone got" => "Visa vad alla fick",
+      "Hide" => "Dölj",
+      "Sealed" => "Förseglat",
       "Points must be a whole number." => "Poängen måste vara ett heltal.",
       "That deck has no cards for this." => "Den kortleken har inga kort för det här.",
       "Couldn't do that: %{reason}" => "Det gick inte: %{reason}",
@@ -139,6 +152,22 @@ defmodule Halloween.Text.Swedish do
         "Ta bort %{name}, med alla svar och poäng?",
       "Remove" => "Ta bort",
 
+      # Decorations
+      "Decorations" => "Dekorationer",
+      "On the TV. Pick them separately for between cards and during a card." =>
+        "På tv:n. Välj var för sig för mellan korten och medan ett kort är framme.",
+      "Between cards" => "Mellan korten",
+      "During a card" => "Under ett kort",
+      "Jack-o'-lantern" => "Pumpalykta",
+      "Scarecrow" => "Fågelskrämma",
+      "Full moon" => "Fullmåne",
+      "Bats" => "Fladdermöss",
+      "Ghost" => "Spöke",
+      "Spider" => "Spindel",
+      "Cobwebs" => "Spindelväv",
+      "Eyes in the dark" => "Ögon i mörkret",
+      "Fog" => "Dimma",
+
       # Decks
       "Starter decks loaded." => "Startlekarna är hämtade.",
       "A deck is a pile of cards: one game, like Pekleken or trivia. Start from the starter decks, or make your own." =>
@@ -150,6 +179,10 @@ defmodule Halloween.Text.Swedish do
       "Name" => "Namn",
       "What it's about (only you see this)" => "Vad den handlar om (bara du ser det)",
       "Create deck" => "Skapa kortlek",
+      "Start from a starter deck" => "Börja från en startlek",
+      "Makes a copy you can edit. Pick a language to play it in." =>
+        "Gör en kopia som du kan ändra. Välj vilket språk den ska spelas på.",
+      "Add" => "Lägg till",
       "Deck saved." => "Kortleken är sparad.",
       "Card saved." => "Kortet är sparat.",
       "Deck" => "Kortlek",
