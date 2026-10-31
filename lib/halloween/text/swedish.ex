@@ -154,6 +154,14 @@ defmodule Halloween.Text.Swedish do
 
       # Decorations
       "Decorations" => "Dekorationer",
+      "New session" => "Ny omgång",
+      "Clears every played card, answer and point, and keeps guests, decks and decorations. The old session is saved first." =>
+        "Rensar alla spelade kort, svar och poäng, men behåller gäster, kortlekar och dekorationer. Den gamla omgången sparas först.",
+      "Start over? Every point and answer will be cleared." =>
+        "Börja om? Alla poäng och svar rensas.",
+      "Start a new session" => "Starta en ny omgång",
+      "New session. The old one is saved as %{file}." =>
+        "Ny omgång. Den gamla är sparad som %{file}.",
       "On the TV. Pick them separately for between cards and during a card." =>
         "På tv:n. Välj var för sig för mellan korten och medan ett kort är framme.",
       "Between cards" => "Mellan korten",

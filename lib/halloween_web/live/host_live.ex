@@ -129,6 +129,17 @@ defmodule HalloweenWeb.HostLive do
     end
   end
 
+  def handle_event("new_session", _params, socket) do
+    {:ok, path} = Game.new_session()
+
+    {:noreply,
+     put_flash(
+       socket,
+       :info,
+       t("New session. The old one is saved as %{file}.", file: Path.basename(path))
+     )}
+  end
+
   # Missions each, from the deal form: a whole number from 1 to 20.
   defp each(value) do
     case Integer.parse(value) do
@@ -338,6 +349,23 @@ defmodule HalloweenWeb.HostLive do
             />
           <% end %>
         </form>
+      </section>
+
+      <section class="panel">
+        <h2>{t("New session")}</h2>
+        <p class="hint">
+          {t(
+            "Clears every played card, answer and point, and keeps guests, decks and decorations. The old session is saved first."
+          )}
+        </p>
+        <button
+          id="new-session"
+          class="btn btn-ghost"
+          phx-click="new_session"
+          data-confirm={t("Start over? Every point and answer will be cleared.")}
+        >
+          {t("Start a new session")}
+        </button>
       </section>
     </Layouts.host>
     """

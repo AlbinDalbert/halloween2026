@@ -153,6 +153,23 @@ defmodule Halloween.GameTest do
     end
   end
 
+  test "a new session clears plays, answers and points, keeps guests and decks, and saves the old one",
+       %{alice: a, bob: b} do
+    deck = deck([%{text: "Who is a vampire?", input: "pick_guest", points: 1}])
+    {:ok, play} = Game.draw(deck)
+    {:ok, _} = Game.answer(play.id, a, to_string(b.id))
+    Game.award(a.id, 3, "costume")
+
+    {:ok, path} = Game.new_session()
+    on_exit(fn -> File.rm(path) end)
+
+    assert File.exists?(path)
+    assert Game.stage() == nil
+    assert Enum.all?(Game.leaderboard(), fn {_user, points} -> points == 0 end)
+    assert length(Game.list_guests()) == 3
+    assert [%{cards: [_]}] = Game.list_decks()
+  end
+
   test "login makes guests in HOST_EMAILS hosts" do
     assert guest("Dana", hosts: ["dana@test"]).host
     refute guest("Eve").host

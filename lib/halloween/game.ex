@@ -331,6 +331,38 @@ defmodule Halloween.Game do
     )
   end
 
+  ## Sessions
+
+  @doc """
+  Starts the party over: every card played, answer and point is gone, but guests, decks and
+  decorations stay. The old session is saved first, as a copy of the whole database in
+  `sessions/` next to it. Returns the copy's path.
+  """
+  def new_session do
+    path = save_session()
+
+    Repo.transact(fn ->
+      Repo.delete_all(Point)
+      Repo.delete_all(Answer)
+      Repo.delete_all(Play)
+      {:ok, path}
+    end)
+    |> broadcast()
+  end
+
+  # Its own connection, so the copy runs outside any transaction the pool is in.
+  defp save_session do
+    database = Repo.config()[:database]
+    stamp = DateTime.utc_now() |> Calendar.strftime("%Y-%m-%d_%H%M%S")
+    path = Path.join([Path.dirname(database), "sessions", "halloween-#{stamp}.db"])
+    File.mkdir_p!(Path.dirname(path))
+
+    {:ok, conn} = Exqlite.Sqlite3.open(database)
+    :ok = Exqlite.Sqlite3.execute(conn, "VACUUM INTO '#{path}'")
+    Exqlite.Sqlite3.close(conn)
+    path
+  end
+
   ## Decorations
 
   @doc "The names of the decorations that are on in a scene, `idle` or `stage`."
